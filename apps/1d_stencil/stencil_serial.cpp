@@ -2,7 +2,7 @@
 //
 // This example provides a stdpar implementation for the 1D stencil code.
 
-#include <experimental/mdspan>
+	#include <experimental/mdspan>
 
 #include "argparse/argparse.hpp"
 #include "commons.hpp"
