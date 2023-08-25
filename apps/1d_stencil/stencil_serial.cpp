@@ -2,7 +2,7 @@
 //
 // This example provides a stdpar implementation for the 1D stencil code.
 
-	#include <experimental/mdspan>
+#include <experimental/mdspan>
 
 #include "argparse/argparse.hpp"
 #include "commons.hpp"
@@ -31,6 +31,7 @@ bool header = true;  // print csv heading
 double k = 0.5;      // heat transfer coefficient
 double dt = 1.;      // time step
 double dx = 1.;      // grid spacing
+int test = 42;
 
 ///////////////////////////////////////////////////////////////////////////////
 //[stepper_1
