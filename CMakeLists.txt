@@ -2,7 +2,7 @@
 # Add colors
 # ##############################################################################
 if(NOT WIN32)
-  string(ASCII 27 Esc)
+  	string(ASCII 27 Esc)
   set(ColourReset "${Esc}[m")
   set(ColourBold "${Esc}[1m")
   set(Red "${Esc}[31m")
