@@ -72,7 +72,7 @@ int benchmark(args_params_t const& args) {
   thrust::sequence(thrust::device, d_next, d_next + size, 0);
 
   // CUDA kernel execution parameters
-  const int threadsPerBlock = 256;
+  const int threadsPerBlock = std::min(1024, (int)size);
   const int blocks = (size + threadsPerBlock - 1) / threadsPerBlock;
 
   // Actual time step loop
