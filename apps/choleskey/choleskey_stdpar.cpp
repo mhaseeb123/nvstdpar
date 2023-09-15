@@ -1,6 +1,9 @@
-// Cholesky Decomposition:  mdspan
-#include <bits/stdc++.h>
+// Cholesky Decomposition: stdpar
+#include "argparse/argparse.hpp"
+#include "commons.hpp"
+
 #include <experimental/mdspan>
+#include <execution> // Include the execution header
 #include <vector>
 
 using namespace std;
@@ -8,8 +11,8 @@ using namespace std;
 template<typename T>
 void Cholesky_Decomposition(std::vector<T> & vec, int n)
 {
-    int lower[n][n];
-    memset(lower, 0, sizeof(lower));
+    std::vector<std::vector<T>> lower(n, std::vector<T>(n, 0));
+    //memset(lower, 0, sizeof(lower));
 
     using view_2d = std::extents<T, std::dynamic_extent, std::dynamic_extent>;
     auto matrix = std::mdspan<T, view_2d, std::layout_right>(vec.data(), n,n);
@@ -21,17 +24,20 @@ void Cholesky_Decomposition(std::vector<T> & vec, int n)
  
             if (j == i) // summation for diagonals
             {
-                for (int k = 0; k < j; k++)
+                std::for_each_n(std::execution::par, counting_iterator(0), j,
+                      [=, j = j, &sum](int32_t k) {
                     sum += pow(lower[j][k], 2);
-                lower[j][j] = sqrt(matrix(i,j) -
-                                        sum);
+                      });
+                lower[j][j] = sqrt(matrix(i,j) - sum);
             } else {
- 
                 // Evaluating L(i, j) using L(j, j)
-                for (int k = 0; k < j; k++)
-                    sum += (lower[i][k] * lower[j][k]);
-                lower[i][j] = (matrix(i,j) - sum) /
-                                      lower[j][j];
+                std::for_each_n(std::execution::par, counting_iterator(0), j,
+                      [=,  i = i, j = j, &sum](int32_t k) {
+                        //std::cout <<lower_i[k] << "\n" << lower_j[k] << std::endl;
+                        sum += (lower[i][k] * lower[j][k]);
+                      });
+
+                lower[i][j] = (matrix(i,j) - sum) / lower[j][j];
             }
         }
     }
