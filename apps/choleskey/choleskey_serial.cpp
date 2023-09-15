@@ -1,17 +1,20 @@
-// CPP program to decompose a matrix using
-// Cholesky Decomposition
+// Cholesky Decomposition:  mdspan
 #include <bits/stdc++.h>
+#include <experimental/mdspan>
+
 using namespace std;
- 
-const int MAX = 100;
- 
-void Cholesky_Decomposition(int matrix[][MAX], int n)
+
+template<typename T>
+void Cholesky_Decomposition(std::vector<T> & vec, int n)
 {
     int lower[n][n];
     memset(lower, 0, sizeof(lower));
+
+    using view_2d = std::extents<T, std::dynamic_extent, std::dynamic_extent>;
+    auto matrix = std::mdspan<T, view_2d, std::layout_right>(vec.data(), n,n);
  
     // Decomposing a matrix into Lower Triangular
-    for (int i = 0; i < n; i++) {
+    for (int i = 0; i < matrix.extent(0); i++) {
         for (int j = 0; j <= i; j++) {
             int sum = 0;
  
@@ -19,14 +22,14 @@ void Cholesky_Decomposition(int matrix[][MAX], int n)
             {
                 for (int k = 0; k < j; k++)
                     sum += pow(lower[j][k], 2);
-                lower[j][j] = sqrt(matrix[j][j] -
+                lower[j][j] = sqrt(matrix(i,j) -
                                         sum);
             } else {
  
                 // Evaluating L(i, j) using L(j, j)
                 for (int k = 0; k < j; k++)
                     sum += (lower[i][k] * lower[j][k]);
-                lower[i][j] = (matrix[i][j] - sum) /
+                lower[i][j] = (matrix(i,j) - sum) /
                                       lower[j][j];
             }
         }
@@ -52,10 +55,9 @@ void Cholesky_Decomposition(int matrix[][MAX], int n)
 // Driver Code for testing
 int main()
 {
-    int n = 3;
-    int matrix[][MAX] = { { 4, 12, -16 },
-                        { 12, 37, -43 },
-                        { -16, -43, 98 } };
-    Cholesky_Decomposition(matrix, n);
+    constexpr int n = 3;
+    std::vector<int> v{4, 12, -16,12, 37, -43, -16, -43, 98 };
+    Cholesky_Decomposition(v, n);
+
     return 0;
 }
