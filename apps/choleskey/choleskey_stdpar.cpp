@@ -12,7 +12,6 @@ template<typename T>
 void Cholesky_Decomposition(std::vector<T> & vec, int n)
 {
     std::vector<std::vector<T>> lower(n, std::vector<T>(n, 0));
-    //memset(lower, 0, sizeof(lower));
 
     using view_2d = std::extents<T, std::dynamic_extent, std::dynamic_extent>;
     auto matrix = std::mdspan<T, view_2d, std::layout_right>(vec.data(), n,n);
