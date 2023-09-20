@@ -5,17 +5,29 @@
 #include <experimental/mdspan>
 #include <execution> // Include the execution header
 #include <vector>
+#include <iostream>
+#include <algorithm>
+#include <numeric>
 
 using namespace std;
+
+struct Multiply {
+    int operator()(int a, int b) const {
+        return a * b;
+    }
+};
+
 
 template<typename T>
 void Cholesky_Decomposition(std::vector<T> & vec, int n)
 {
     std::vector<std::vector<T>> lower(n, std::vector<T>(n, 0));
+    
 
     using view_2d = std::extents<T, std::dynamic_extent, std::dynamic_extent>;
     auto matrix = std::mdspan<T, view_2d, std::layout_right>(vec.data(), n,n);
- 
+    
+    Multiply multiplier;
     // Decomposing a matrix into Lower Triangular
     for (int i = 0; i < matrix.extent(0); i++) {
         for (int j = 0; j <= i; j++) {
@@ -23,18 +35,25 @@ void Cholesky_Decomposition(std::vector<T> & vec, int n)
  
             if (j == i) // summation for diagonals
             {
-                std::for_each_n(std::execution::par, counting_iterator(0), j,
-                      [=, j = j, &sum](int32_t k) {
-                    sum += pow(lower[j][k], 2);
-                      });
-                lower[j][j] = sqrt(matrix(i,j) - sum);
+
+                // apply transform_reduce for the first [lower[j].cbegin(), lower[j].cbegin() +j ) 
+                // sum = std::transform_reduce(std::execution::par, lower[j].cbegin(), lower[j].cbegin() +j, 0, std::plus{}, Square());
+
+                sum = std::transform_reduce(std::execution::par, lower[j].cbegin(), lower[j].cbegin() +j, 
+                    0, std::plus{},
+                        [=, i = i, j = j](int n) { return n * n; }); 
+
+                lower[j][j] = std::sqrt(matrix(i,j) - sum);
+
             } else {
                 // Evaluating L(i, j) using L(j, j)
-                std::for_each_n(std::execution::par, counting_iterator(0), j,
-                      [=,  i = i, j = j, &sum](int32_t k) {
-                        //std::cout <<lower_i[k] << "\n" << lower_j[k] << std::endl;
-                        sum += (lower[i][k] * lower[j][k]);
-                      });
+
+                sum = std::transform_reduce(std::execution::par, lower[j].cbegin(),
+                                              lower[j].cbegin() + j,
+                                              lower[i].cbegin(),
+                                              0,
+                                              std::plus<>(),
+                                              multiplier);
 
                 lower[i][j] = (matrix(i,j) - sum) / lower[j][j];
             }

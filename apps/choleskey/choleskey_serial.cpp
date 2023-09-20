@@ -23,8 +23,9 @@ void Cholesky_Decomposition(std::vector<T> & vec, int n)
             {
                 for (int k = 0; k < j; k++)
                     sum += pow(lower[j][k], 2);
+
                 lower[j][j] = sqrt(matrix(i,j) -
-                                        sum);
+                                        sum);                      
             } else {
  
                 // Evaluating L(i, j) using L(j, j)
