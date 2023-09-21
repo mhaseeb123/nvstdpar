@@ -2,59 +2,113 @@
 #include <bits/stdc++.h>
 #include <experimental/mdspan>
 #include <vector>
+#include "argparse/argparse.hpp"
+#include "commons.hpp"
+#include "matrixutil.hpp"
 
 using namespace std;
 
-template <typename T>
-void Cholesky_Decomposition(std::vector<T>& vec, int n) {
-  int lower[n][n];
-  memset(lower, 0, sizeof(lower));
+// parameters
+struct args_params_t : public argparse::Args {
+  bool& results = kwarg("results", "print generated results (default: false)")
+                      .set_default(true);
+  std::uint64_t& nd =
+      kwarg("nd", "Number of inout matrix dimension").set_default(6);
 
-  using view_2d = std::extents<T, std::dynamic_extent, std::dynamic_extent>;
-  auto matrix = std::mdspan<T, view_2d, std::layout_right>(vec.data(), n, n);
+  bool& help = flag("h, help", "print help");
+  bool& time = kwarg("t, time", "print time").set_default(true);
+};
 
-  // Decomposing a matrix into Lower Triangular
-  for (int i = 0; i < matrix.extent(0); i++) {
-    for (int j = 0; j <= i; j++) {
-      int sum = 0;
+///////////////////////////////////////////////////////////////////////////////
+struct solver {
 
-      if (j == i)  // summation for diagonals
-      {
-        for (int k = 0; k < j; k++)
-          sum += pow(lower[j][k], 2);
+  using view_2d = std::extents<int, std::dynamic_extent, std::dynamic_extent>;
 
-        lower[j][j] = sqrt(matrix(i, j) - sum);
-      } else {
+  typedef std::mdspan<int, view_2d, std::layout_right> matrix_ms_t;
 
-        // Evaluating L(i, j) using L(j, j)
-        for (int k = 0; k < j; k++)
-          sum += (lower[i][k] * lower[j][k]);
-        lower[i][j] = (matrix(i, j) - sum) / lower[j][j];
+  template <typename T>
+  matrix_ms_t Cholesky_Decomposition(std::vector<T>& vec, int n) {
+    std::vector<T> lower(n * n, 0);
+
+    auto matrix_ms =
+        std::mdspan<T, view_2d, std::layout_right>(vec.data(), n, n);
+    auto lower_ms =
+        std::mdspan<T, view_2d, std::layout_right>(lower.data(), n, n);
+
+    // Decomposing a matrix into Lower Triangular
+    for (int i = 0; i < matrix_ms.extent(0); i++) {
+      for (int j = 0; j <= i; j++) {
+        T sum = 0;
+
+        if (j == i) {
+          // summation for diagonals
+          for (int k = 0; k < j; k++)
+            sum += pow(lower_ms(j, k), 2);
+          lower_ms(j, j) = sqrt(matrix_ms(i, j) - sum);
+        } else {
+          // Evaluating L(i, j) using L(j, j)
+          for (int k = 0; k < j; k++)
+            sum += (lower_ms(i, k) * lower_ms(j, k));
+          lower_ms(i, j) = (matrix_ms(i, j) - sum) / lower_ms(j, j);
+        }
       }
+    }
+    return lower_ms;
+  }
+};
+
+///////////////////////////////////////////////////////////////////////////////
+int benchmark(args_params_t const& args) {
+
+  std::uint64_t nd = args.nd;  // Number of matrix dimension.
+
+  std::vector<int> inputMatrix = generate_pascal_matrix<int>(nd);
+
+  // Create the stepper object
+  solver solve;
+  // Measure execution time.
+  Timer timer;
+
+  // Execute nt time steps on nx grid points.
+  auto res_matrix = solve.Cholesky_Decomposition(inputMatrix, nd);
+
+  // Print the final results
+  if (args.results) {
+    // Displaying Lower Triangular and its Transpose
+    cout << setw(6) << " Lower Triangular" << setw(30) << "Transpose" << endl;
+    for (int i = 0; i < nd; i++) {
+      // Lower Triangular
+      for (int j = 0; j < nd; j++)
+        cout << setw(6) << res_matrix(i, j) << "\t";
+      cout << "\t";
+
+      // Transpose of Lower Triangular
+      for (int j = 0; j < nd; j++)
+        cout << setw(6) << res_matrix(j, i) << "\t";
+      cout << endl;
     }
   }
 
-  // Displaying Lower Triangular and its Transpose
-  cout << setw(6) << " Lower Triangular" << setw(30) << "Transpose" << endl;
-  for (int i = 0; i < n; i++) {
-
-    // Lower Triangular
-    for (int j = 0; j < n; j++)
-      cout << setw(6) << lower[i][j] << "\t";
-    cout << "\t";
-
-    // Transpose of Lower Triangular
-    for (int j = 0; j < n; j++)
-      cout << setw(6) << lower[j][i] << "\t";
-    cout << endl;
+  if (args.time) {
+    std::cout << "Duration: " << time << " ms."
+              << "\n";
   }
+
+  return 0;
 }
 
 // Driver Code for testing
-int main() {
-  constexpr int n = 3;
-  std::vector<int> v{4, 12, -16, 12, 37, -43, -16, -43, 98};
-  Cholesky_Decomposition(v, n);
+int main(int argc, char* argv[]) {
+
+  // parse params
+  args_params_t args = argparse::parse<args_params_t>(argc, argv);
+  // see if help wanted
+  if (args.help) {
+    args.print();  // prints all variables
+    return 0;
+  }
+
+  benchmark(args);
 
   return 0;
 }
