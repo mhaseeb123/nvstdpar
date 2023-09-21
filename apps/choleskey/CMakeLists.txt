@@ -10,10 +10,4 @@ add_executable(choleskey_stdpar choleskey_stdpar.cpp)
 target_include_directories(
   choleskey_stdpar
   PRIVATE ${CMAKE_BINARY_DIR} ${CMAKE_CURRENT_LIST_DIR}/../../include
-          ${ARGPARSE_INCLUDE_DIR} ${MDSPAN_INCLUDE_DIR})           
-
-add_executable(choleskey_stdpar_foreach choleskey_stdpar_foreach.cpp)
-target_include_directories(
-  choleskey_stdpar_foreach
-  PRIVATE ${CMAKE_BINARY_DIR} ${CMAKE_CURRENT_LIST_DIR}/../../include
-          ${ARGPARSE_INCLUDE_DIR} ${MDSPAN_INCLUDE_DIR})    
+          ${ARGPARSE_INCLUDE_DIR} ${MDSPAN_INCLUDE_DIR})            

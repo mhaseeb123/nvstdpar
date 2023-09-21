@@ -49,7 +49,6 @@ struct solver {
 
         if (j == i)  // summation for diagonals
         {
-
           // apply transform_reduce for the iterator [lower[j].cbegin(), lower[j].cbegin() +j )
           sum = std::transform_reduce(
               std::execution::par, lower[j].cbegin(), lower[j].cbegin() + j, 0,
@@ -58,7 +57,6 @@ struct solver {
           lower[j][j] = std::sqrt(matrix_ms(i, j) - sum);
 
         } else {
-
           // Evaluating L(i, j) using L(j, j)
           sum = std::transform_reduce(std::execution::par, lower[j].cbegin(),
                                       lower[j].cbegin() + j, lower[i].cbegin(),
