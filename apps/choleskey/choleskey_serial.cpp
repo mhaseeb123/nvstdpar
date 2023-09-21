@@ -64,12 +64,11 @@ int benchmark(args_params_t const& args) {
 
   std::vector<int> inputMatrix = generate_pascal_matrix<int>(nd);
 
-  // Create the stepper object
+  // Create the solverobject
   solver solve;
   // Measure execution time.
   Timer timer;
-
-  // Execute nt time steps on nx grid points.
+  // start decomposation
   auto res_matrix = solve.Cholesky_Decomposition(inputMatrix, nd);
 
   // Print the final results

@@ -38,7 +38,7 @@ struct solver {
     auto matrix_ms =
         std::mdspan<T, view_2d, std::layout_right>(vec.data(), n, n);
 
-    auto multiplier_l = [=](auto a, auto b) {
+    auto multiplier_lambda = [=](auto a, auto b) {
       return a * b;
     };
 
@@ -49,18 +49,17 @@ struct solver {
 
         if (j == i)  // summation for diagonals
         {
-          // apply transform_reduce for the iterator [lower[j].cbegin(), lower[j].cbegin() +j )
           sum = std::transform_reduce(
               std::execution::par, lower[j].cbegin(), lower[j].cbegin() + j, 0,
               std::plus{}, [=, i = i, j = j](int val) { return val * val; });
 
           lower[j][j] = std::sqrt(matrix_ms(i, j) - sum);
 
-        } else {
-          // Evaluating L(i, j) using L(j, j)
+        } else {  // Evaluating L(i, j) using L(j, j)
+
           sum = std::transform_reduce(std::execution::par, lower[j].cbegin(),
                                       lower[j].cbegin() + j, lower[i].cbegin(),
-                                      0, std::plus<>(), multiplier_l);
+                                      0, std::plus<>(), multiplier_lambda);
 
           lower[i][j] = (matrix_ms(i, j) - sum) / lower[j][j];
         }
@@ -77,12 +76,12 @@ int benchmark(args_params_t const& args) {
 
   std::vector<int> inputMatrix = generate_pascal_matrix<int>(nd);
 
-  // Create the stepper object
+  // Create the solver object
   solver solve;
   // Measure execution time.
   Timer timer;
 
-  // Execute nt time steps on nx grid points.
+  // start decomposation
   auto res_matrix = solve.Cholesky_Decomposition(inputMatrix, nd);
 
   // Print the final results
