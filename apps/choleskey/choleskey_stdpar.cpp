@@ -13,19 +13,6 @@
 
 using namespace std;
 
-// parameters
-struct args_params_t : public argparse::Args {
-  bool& results = kwarg("results", "print generated results (default: false)")
-                      .set_default(true);
-  std::uint64_t& nd =
-      kwarg("nd", "Number of inout matrix dimension").set_default(6);
-
-  bool& help = flag("h, help", "print help");
-  bool& time = kwarg("t, time", "print time").set_default(true);
-};
-
-///////////////////////////////////////////////////////////////////////////////
-
 struct solver {
 
   using view_2d = std::extents<int, std::dynamic_extent, std::dynamic_extent>;
@@ -49,9 +36,9 @@ struct solver {
 
         if (j == i)  // summation for diagonals
         {
-          sum = std::transform_reduce(
-              std::execution::par, lower[j].cbegin(), lower[j].cbegin() + j, 0,
-              std::plus{}, [=, i = i, j = j](int val) { return val * val; });
+          sum = std::transform_reduce(std::execution::par, lower[j].cbegin(),
+                                      lower[j].cbegin() + j, 0, std::plus{},
+                                      [=](int val) { return val * val; });
 
           lower[j][j] = std::sqrt(matrix_ms(i, j) - sum);
 

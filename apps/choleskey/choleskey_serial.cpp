@@ -8,18 +8,6 @@
 
 using namespace std;
 
-// parameters
-struct args_params_t : public argparse::Args {
-  bool& results = kwarg("results", "print generated results (default: false)")
-                      .set_default(true);
-  std::uint64_t& nd =
-      kwarg("nd", "Number of inout matrix dimension").set_default(6);
-
-  bool& help = flag("h, help", "print help");
-  bool& time = kwarg("t, time", "print time").set_default(true);
-};
-
-///////////////////////////////////////////////////////////////////////////////
 struct solver {
 
   using view_2d = std::extents<int, std::dynamic_extent, std::dynamic_extent>;

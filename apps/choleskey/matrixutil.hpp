@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <vector>
+
 // generate positive definition matrix
 template <typename T>
 using Matrix = std::vector<std::vector<T>>;
@@ -26,3 +27,15 @@ std::vector<T> generate_pascal_matrix(const int n) {
   }
   return std::move(flattenedVector);
 }
+
+// parameters define
+struct args_params_t : public argparse::Args {
+  bool& results = kwarg("results", "print generated results (default: false)")
+                      .set_default(true);
+  std::uint64_t& nd =
+      kwarg("nd", "Number of input(positive definition) matrix dimension(<=18)")
+          .set_default(10);
+
+  bool& help = flag("h, help", "print help");
+  bool& time = kwarg("t, time", "print time").set_default(true);
+};
