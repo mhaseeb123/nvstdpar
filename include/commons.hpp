@@ -30,20 +30,21 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include <bit>
-#include <span>
-#include <thread>
-#include <functional>
 #include <algorithm>
+#include <bit>
 #include <cassert>
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <execution>
+#include <functional>
 #include <iostream>
 #include <iterator>
+#include <map>
 #include <memory>
 #include <numeric>
+#include <span>
+#include <thread>
 #include <type_traits>
 #include <typeinfo>
 #include <vector>
@@ -51,43 +52,72 @@
 #include "counting_iterator.hpp"
 
 // get mdpsan 2d indices from 1d index
-#define dim2(x, ms)          \
-  int ii = x / ms.extent(1); \
-  int ij = x % ms.extent(1);
+#define dim2(x, ms)            \
+    int ii = x / ms.extent(1); \
+    int ij = x % ms.extent(1);
 // get mdspan 3d indices from 1d index
-#define dim3(x, ms)                            \
-  int ii = x / (ms3.extent(1) * ms.extent(2)); \
-  int ij = (x / ms.extent(2)) % ms.extent(1);  \
-  int ik = x % ms.extent(2)
+#define dim3(x, ms)                              \
+    int ii = x / (ms3.extent(1) * ms.extent(2)); \
+    int ij = (x / ms.extent(2)) % ms.extent(1);  \
+    int ik = x % ms.extent(2)
 
 class Timer {
- public:
-  Timer() { start(); }
+   public:
+    Timer() { start(); }
 
-  ~Timer() { stop(); }
+    ~Timer() { stop(); }
 
-  void start() { start_time_point = std::chrono::high_resolution_clock::now(); }
+    void start() { start_time_point = std::chrono::high_resolution_clock::now(); }
 
-  double stop() {
-    end_time_point = std::chrono::high_resolution_clock::now();
-    return duration();
-  }
+    double stop() {
+        end_time_point = std::chrono::high_resolution_clock::now();
+        return duration();
+    }
 
-  double duration() {
-    auto start = std::chrono::time_point_cast<std::chrono::microseconds>(
-                     start_time_point)
-                     .time_since_epoch()
-                     .count();
-    auto end =
-        std::chrono::time_point_cast<std::chrono::microseconds>(end_time_point)
-            .time_since_epoch()
-            .count();
-    auto duration = end - start;
-    double ms = duration * 0.001;
-    return ms;
-  }
+    double duration() {
+        auto start =
+            std::chrono::time_point_cast<std::chrono::microseconds>(start_time_point).time_since_epoch().count();
+        auto end = std::chrono::time_point_cast<std::chrono::microseconds>(end_time_point).time_since_epoch().count();
+        auto duration = end - start;
+        double ms = duration * 0.001;
+        return ms;
+    }
 
- private:
-  std::chrono::time_point<std::chrono::high_resolution_clock> start_time_point;
-  std::chrono::time_point<std::chrono::high_resolution_clock> end_time_point;
+   private:
+    std::chrono::time_point<std::chrono::high_resolution_clock> start_time_point;
+    std::chrono::time_point<std::chrono::high_resolution_clock> end_time_point;
+};
+
+enum class sch_t { INVALID = -1, CPU, GPU, MULTIGPU };
+
+class heq_sch {
+   public:
+    heq_sch(const std::string& input) noexcept : scheduler(lookupScheduler(input)) {
+        if (scheduler == sch_t::INVALID) {
+            throw std::invalid_argument("Invalid scheduler type provided.");
+        }
+    }
+
+    heq_sch() noexcept : scheduler(sch_t::CPU) {}
+
+    // Use default for trivial constructors
+    heq_sch(const heq_sch& other) noexcept = default;
+
+    [[nodiscard]] sch_t operator()() const noexcept { return scheduler; }
+
+   private:
+    sch_t scheduler;
+
+    static constexpr std::array<std::pair<std::string_view, sch_t>, 3> schmap = {
+        std::make_pair("cpu", sch_t::CPU), std::make_pair("gpu", sch_t::GPU),
+        std::make_pair("multigpu", sch_t::MULTIGPU)};
+
+    static sch_t lookupScheduler(const std::string_view input) {
+        for (const auto& pair : schmap) {
+            if (input == pair.first) {
+                return pair.second;
+            }
+        }
+        return sch_t::INVALID;
+    }
 };
