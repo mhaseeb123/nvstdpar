@@ -90,7 +90,7 @@ class Timer {
 
 enum class sch_t { CPU, GPU, MULTIGPU };
 
-[[nodiscard]] sch_t get_sch_t(std::string_view str) {
+[[nodiscard]] sch_t get_sch_enum(std::string_view str) {
     static const std::map<std::string_view, sch_t> schmap = {
         {"cpu", sch_t::CPU}, {"gpu", sch_t::GPU}, {"multigpu", sch_t::MULTIGPU}};
 

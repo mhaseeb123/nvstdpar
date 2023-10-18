@@ -115,7 +115,7 @@ int benchmark(args_params_t const& args) {
     // launch with appropriate stdexec scheduler
     std::vector<Real_t> solution;
     try {
-        sch_t schedulerType = get_sch_t(sch_str);
+        sch_t schedulerType = get_sch_enum(sch_str);
 
         switch (schedulerType) {
             case sch_t::CPU:
