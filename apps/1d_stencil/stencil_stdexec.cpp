@@ -102,9 +102,8 @@ struct stepper {
 int benchmark(args_params_t const& args) {
     std::uint64_t size = args.size;  // Number of elements.
     std::uint64_t nt = args.nt;      // Number of steps.
-    std::string sched = args.sch;
-    heq_sch sch(sched);
-    int nthreads = args.nthreads;
+    std::string sch_str = args.sch;  // scheduler type
+    int nthreads = args.nthreads;    // number of threads for cpu scheduler type
 
     // Create the stepper object
     stepper step;
@@ -115,23 +114,26 @@ int benchmark(args_params_t const& args) {
     // Execute nt time steps on size of elements.
     // launch with appropriate stdexec scheduler
     std::vector<Real_t> solution;
-    switch (sch()) {
-        case sch_t::CPU:
-            solution = step.do_work(exec::static_thread_pool(nthreads).get_scheduler(), size, nt);
-            break;
-        case sch_t::GPU:
-            solution = step.do_work(nvexec::stream_context().get_scheduler(), size, nt);
-            break;
-        case sch_t::MULTIGPU:
-            solution = step.do_work(nvexec::multi_gpu_stream_context().get_scheduler(), size, nt);
-            break;
-        case sch_t::INVALID:
-            [[fallthrough]];
-        default:
-            std::cerr << "FATAL: " << sched << " is not a stdexec scheduler.\n";
-            std::cerr << "Run: heat-equation-stdexec --help to see the list of available schedulers\n";
-            std::cerr << "Exiting...\n";
-            exit(1);
+    try {
+        sch_t schedulerType = get_sch_t(sch_str);
+
+        switch (schedulerType) {
+            case sch_t::CPU:
+                solution = step.do_work(exec::static_thread_pool(nthreads).get_scheduler(), size, nt);
+                break;
+            case sch_t::GPU:
+                solution = step.do_work(nvexec::stream_context().get_scheduler(), size, nt);
+                break;
+            case sch_t::MULTIGPU:
+                solution = step.do_work(nvexec::multi_gpu_stream_context().get_scheduler(), size, nt);
+                break;
+            default:
+                std::cerr << "Unknown scheduler type encountered." << std::endl;
+                break;
+        }
+    } catch (const std::invalid_argument& e) {
+        std::cerr << e.what() << std::endl;
+        exit(1);
     }
 
     auto time = timer.stop();

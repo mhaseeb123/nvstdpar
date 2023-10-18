@@ -88,36 +88,18 @@ class Timer {
     std::chrono::time_point<std::chrono::high_resolution_clock> end_time_point;
 };
 
-enum class sch_t { INVALID = -1, CPU, GPU, MULTIGPU };
+enum class sch_t { CPU, GPU, MULTIGPU };
 
-class heq_sch {
-   public:
-    heq_sch(const std::string& input) noexcept : scheduler(lookupScheduler(input)) {
-        if (scheduler == sch_t::INVALID) {
-            throw std::invalid_argument("Invalid scheduler type provided.");
-        }
+[[nodiscard]] sch_t get_sch_t(std::string_view str) {
+    static const std::map<std::string_view, sch_t> schmap = {
+        {"cpu", sch_t::CPU}, {"gpu", sch_t::GPU}, {"multigpu", sch_t::MULTIGPU}};
+
+    if (schmap.contains(str)) {
+        return schmap.at(str);
     }
 
-    heq_sch() noexcept : scheduler(sch_t::CPU) {}
-
-    // Use default for trivial constructors
-    heq_sch(const heq_sch& other) noexcept = default;
-
-    [[nodiscard]] sch_t operator()() const noexcept { return scheduler; }
-
-   private:
-    sch_t scheduler;
-
-    static constexpr std::array<std::pair<std::string_view, sch_t>, 3> schmap = {
-        std::make_pair("cpu", sch_t::CPU), std::make_pair("gpu", sch_t::GPU),
-        std::make_pair("multigpu", sch_t::MULTIGPU)};
-
-    static sch_t lookupScheduler(const std::string_view input) {
-        for (const auto& pair : schmap) {
-            if (input == pair.first) {
-                return pair.second;
-            }
-        }
-        return sch_t::INVALID;
-    }
-};
+    throw std::invalid_argument("FATAL: " + std::string(str) +
+                                " is not a stdexec scheduler.\n"
+                                "Available schedulers: cpu (static thread pool), gpu, multigpu.\n"
+                                "Exiting...\n");
+}
